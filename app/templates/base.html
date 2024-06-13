@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CodeFusionX</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+    <style>
+      /* Gray dark theme styles */
+      body {
+        background-color: #111827;
+        color: #d1d5db;
+      }
+      .bg-white {
+        background-color: #1f2937;
+      }
+      .text-gray-900 {
+        color: #d1d5db;
+      }
+      .text-gray-700 {
+        color: #9ca3af;
+      }
+      .bg-gray-50 {
+        background-color: #374151;
+      }
+      .bg-gray-800 {
+        background-color: #111827;
+      }
+      .border-gray-300 {
+        border-color: #374151;
+      }
+      .hover\:bg-gray-50:hover {
+        background-color: #4b5563;
+      }
+      .hover\:text-blue-400:hover {
+        color: #60a5fa;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900">
+    <header class="bg-gray-800 shadow">
+      <nav class="container mx-auto px-4 py-2 flex justify-between items-center">
+        <div class="text-xl font-bold">
+          <a href="{{ url_for('index') }}">CodeFusionX</a>
+        </div>
+        <ul class="flex space-x-4">
+          <li><a href="{{ url_for('index') }}" class="hover:text-blue-400">Home</a></li>
+          <li><a href="{{ url_for('about') }}" class="hover:text-blue-400">About</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-gray-300 py-4">
+      <div class="container mx-auto px-4 text-center">
+        &copy; CodeFusionX
+      </div>
+    </footer>
+  </body>
+</html>
