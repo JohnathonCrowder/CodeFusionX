@@ -273,13 +273,19 @@ function updateTextbox() {
   textbox.value = '';
   const fileListItems = document.getElementById('fileListItems').children;
   
+  let isFirstFile = true;
+
   for (const item of fileListItems) {
     const checkbox = item.querySelector('input[type="checkbox"]');
     if (checkbox.checked) {
       const fileName = item.querySelector('label').textContent;
       const fileContent = localStorage.getItem(fileName);
       if (fileContent) {
-        textbox.value += `File: ${fileName}\n\n${fileContent}\n\n`;
+        if (!isFirstFile) {
+          textbox.value += '\n'.repeat(8); // Add 8 empty lines between files
+        }
+        textbox.value += `File: ${fileName}\n\n${fileContent}\n`;
+        isFirstFile = false;
       }
     }
   }
