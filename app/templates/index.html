@@ -172,26 +172,26 @@
   fileListItems.innerHTML = '';
   skippedFileListItems.innerHTML = '';
 
+  const tree = buildDirectoryTree(files);
+
   for (const file of files) {
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
 
     if (acceptedTypes.includes(fileExtension)) {
       try {
         const fileContent = await readFileAsText(file);
-        localStorage.setItem(file.name, fileContent);
-        
-        const listItem = createFileListItem(file.name, fileContent);
-        fileListItems.appendChild(listItem);
+        localStorage.setItem(file.webkitRelativePath, fileContent);
       } catch (error) {
         console.error(`Error reading file ${file.name}: ${error}`);
       }
     } else {
       const skippedListItem = document.createElement('li');
-      skippedListItem.textContent = file.name;
+      skippedListItem.textContent = file.webkitRelativePath;
       skippedFileListItems.appendChild(skippedListItem);
     }
   }
   
+  renderDirectoryTree(tree, fileListItems);
   updateTextbox();
 });
 
@@ -210,6 +210,76 @@
       reader.readAsText(file);
     });
   }
+
+  function createFileListItem(file, fullPath) {
+  const listItem = document.createElement('li');
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = `file-${fullPath}`;
+  checkbox.checked = true;
+  checkbox.classList.add('mr-2');
+  
+  const label = document.createElement('label');
+  label.htmlFor = checkbox.id;
+  label.textContent = file.name; // This should correctly display the file name
+  
+  listItem.appendChild(checkbox);
+  listItem.appendChild(label);
+  
+  checkbox.addEventListener('change', function() {
+    updateTextbox();
+  });
+  
+  return listItem;
+}
+
+function renderDirectoryTree(tree, parentElement, path = '') {
+  const dirs = Object.keys(tree).filter(key => key !== 'files').sort();
+  const files = tree.files || [];
+
+  for (const dir of dirs) {
+    const dirItem = document.createElement('li');
+    dirItem.textContent = dir;
+    dirItem.classList.add('font-bold', 'mt-2');
+    parentElement.appendChild(dirItem);
+
+    const subList = document.createElement('ul');
+    subList.classList.add('ml-4');
+    dirItem.appendChild(subList);
+
+    renderDirectoryTree(tree[dir], subList, `${path}${dir}/`);
+  }
+
+  for (const file of files.sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name))) {
+    const fullPath = file.webkitRelativePath || file.name;
+    const listItem = createFileListItem(file, fullPath);
+    parentElement.appendChild(listItem);
+  }
+}
+
+  function buildDirectoryTree(files) {
+  const tree = {};
+
+  for (const file of files) {
+    const parts = file.webkitRelativePath.split('/');
+    let currentLevel = tree;
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (i === parts.length - 1) {
+        // This is a file
+        if (!currentLevel.files) currentLevel.files = [];
+        currentLevel.files.push(file);
+      } else {
+        // This is a directory
+        if (!currentLevel[part]) currentLevel[part] = {};
+        currentLevel = currentLevel[part];
+      }
+    }
+  }
+
+  return tree;
+}
 
   function getAcceptedTypes() {
     const checkboxes = document.querySelectorAll('#settingsModal input[type="checkbox"]');
@@ -246,45 +316,46 @@ window.addEventListener('load', function() {
     document.getElementById('dirInput').accept = acceptString;
 });
 
-function createFileListItem(fileName, fileContent) {
+
+
+function createFileListItem(file, fullPath) {
   const listItem = document.createElement('li');
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.id = `file-${fileName}`;
+  checkbox.id = `file-${fullPath}`;
   checkbox.checked = true;
   checkbox.classList.add('mr-2');
-  
+
   const label = document.createElement('label');
   label.htmlFor = checkbox.id;
-  label.textContent = fileName;
-  
+  label.textContent = file.webkitRelativePath || file.name; // Use webkitRelativePath if available, otherwise use file.name
+
   listItem.appendChild(checkbox);
   listItem.appendChild(label);
-  
+
   checkbox.addEventListener('change', function() {
     updateTextbox();
   });
-  
+
   return listItem;
 }
 
 function updateTextbox() {
   const textbox = document.getElementById('textbox');
   textbox.value = '';
-  const fileListItems = document.getElementById('fileListItems').children;
+  const checkboxes = document.querySelectorAll('#fileListItems input[type="checkbox"]');
   
   let isFirstFile = true;
 
-  for (const item of fileListItems) {
-    const checkbox = item.querySelector('input[type="checkbox"]');
+  for (const checkbox of checkboxes) {
     if (checkbox.checked) {
-      const fileName = item.querySelector('label').textContent;
-      const fileContent = localStorage.getItem(fileName);
+      const fullPath = checkbox.id.replace('file-', '');
+      const fileContent = localStorage.getItem(fullPath);
       if (fileContent) {
         if (!isFirstFile) {
           textbox.value += '\n'.repeat(8); // Add 8 empty lines between files
         }
-        textbox.value += `File: ${fileName}\n\n${fileContent}\n`;
+        textbox.value += `File: ${fullPath}\n\n${fileContent}\n`;
         isFirstFile = false;
       }
     }
