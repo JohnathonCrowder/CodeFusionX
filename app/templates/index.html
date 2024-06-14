@@ -22,7 +22,7 @@
       </button>
       <div id="fileList" class="mt-4">
         <h3 class="text-lg font-bold mb-2">Uploaded Files:</h3>
-        <ul id="fileListItems" class="list-disc pl-6"></ul>
+        <ul id="fileListItems" class="space-y-2"></ul>
       </div>
       <input id="fileInput" type="file" class="hidden">
       <input id="dirInput" type="file" webkitdirectory directory multiple class="hidden">
@@ -168,11 +168,9 @@
   const fileListItems = document.getElementById('fileListItems');
   const skippedFileListItems = document.getElementById('skippedFileListItems');
 
-  textbox.value = ''; // Clear existing content
-  fileListItems.innerHTML = ''; // Clear existing file list
-  skippedFileListItems.innerHTML = ''; // Clear existing skipped file list
-
-  let isFirstFile = true;
+  textbox.value = '';
+  fileListItems.innerHTML = '';
+  skippedFileListItems.innerHTML = '';
 
   for (const file of files) {
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
@@ -180,26 +178,21 @@
     if (acceptedTypes.includes(fileExtension)) {
       try {
         const fileContent = await readFileAsText(file);
-        if (!isFirstFile) {
-          textbox.value += '\n'.repeat(8); // Add 8 empty lines between files
-        }
-        textbox.value += `File: ${file.name}\n\n${fileContent}\n`; // Add 2 empty lines after filename
-        isFirstFile = false;
-
-        // Add the file name to the file list
-        const listItem = document.createElement('li');
-        listItem.textContent = file.name;
+        localStorage.setItem(file.name, fileContent);
+        
+        const listItem = createFileListItem(file.name, fileContent);
         fileListItems.appendChild(listItem);
       } catch (error) {
-        textbox.value += `Error reading file ${file.name}: ${error}\n\n`;
+        console.error(`Error reading file ${file.name}: ${error}`);
       }
     } else {
-      // Add the skipped file name to the skipped file list
       const skippedListItem = document.createElement('li');
       skippedListItem.textContent = file.name;
       skippedFileListItems.appendChild(skippedListItem);
     }
   }
+  
+  updateTextbox();
 });
 
   function readFileAsText(file) {
@@ -252,5 +245,44 @@ window.addEventListener('load', function() {
     document.getElementById('fileInput').accept = acceptString;
     document.getElementById('dirInput').accept = acceptString;
 });
+
+function createFileListItem(fileName, fileContent) {
+  const listItem = document.createElement('li');
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = `file-${fileName}`;
+  checkbox.checked = true;
+  checkbox.classList.add('mr-2');
+  
+  const label = document.createElement('label');
+  label.htmlFor = checkbox.id;
+  label.textContent = fileName;
+  
+  listItem.appendChild(checkbox);
+  listItem.appendChild(label);
+  
+  checkbox.addEventListener('change', function() {
+    updateTextbox();
+  });
+  
+  return listItem;
+}
+
+function updateTextbox() {
+  const textbox = document.getElementById('textbox');
+  textbox.value = '';
+  const fileListItems = document.getElementById('fileListItems').children;
+  
+  for (const item of fileListItems) {
+    const checkbox = item.querySelector('input[type="checkbox"]');
+    if (checkbox.checked) {
+      const fileName = item.querySelector('label').textContent;
+      const fileContent = localStorage.getItem(fileName);
+      if (fileContent) {
+        textbox.value += `File: ${fileName}\n\n${fileContent}\n\n`;
+      }
+    }
+  }
+}
 </script>
 {% endblock %}
