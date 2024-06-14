@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex flex-row-reverse">
-  <div class="w-1/4 bg-white p-4 shadow">
+<div class="flex flex-row-reverse h-screen">
+  <div class="w-1/4 bg-white p-4 shadow overflow-y-auto">
     <h2 class="text-xl font-bold mb-4">Options</h2>
     <div class="space-y-4">
       <button id="clearButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded block w-full">
@@ -15,14 +15,18 @@
         Settings
       </button>
       <button id="uploadButton" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded block w-full">
-        Upload
+        Upload File
+      </button>
+      <button id="uploadDirButton" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded block w-full">
+        Upload Directory
       </button>
       <input id="fileInput" type="file" class="hidden">
+      <input id="dirInput" type="file" webkitdirectory directory multiple class="hidden">
     </div>
   </div>
-  <div class="w-3/4 mr-4">
+  <div class="w-3/4 mr-4 flex flex-col h-full">
     <h1 class="text-3xl font-bold mb-4">Welcome to CodeFusionX</h1>
-    <textarea id="textbox" class="w-full h-64 p-2 border border-gray-300 rounded"></textarea>
+    <textarea id="textbox" class="flex-grow p-2 border border-gray-300 rounded resize-none text-black bg-white"></textarea>
   </div>
 </div>
 
@@ -122,6 +126,10 @@
     document.getElementById('fileInput').click();
   });
 
+  document.getElementById('uploadDirButton').addEventListener('click', function() {
+    document.getElementById('dirInput').click();
+  });
+
   document.getElementById('fileInput').addEventListener('change', function(event) {
     const file = event.target.files[0];
     const reader = new FileReader();
@@ -133,6 +141,59 @@
     reader.readAsText(file);
   });
 
+  document.getElementById('dirInput').addEventListener('change', async function(event) {
+    const files = event.target.files;
+    const textbox = document.getElementById('textbox');
+    const acceptedTypes = getAcceptedTypes();
+
+    textbox.value = ''; // Clear existing content
+    textbox.value += "Starting directory upload...\n\n";
+
+    for (const file of files) {
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+
+        if (acceptedTypes.includes(fileExtension)) {
+            try {
+                const fileContent = await readFileAsText(file);
+                textbox.value += `File: ${file.name}\n${fileContent}\n\n`;
+            } catch (error) {
+                textbox.value += `Error reading file ${file.name}: ${error}\n\n`;
+            }
+        } else {
+            textbox.value += `Skipping file: ${file.name} (not an accepted type)\n\n`;
+        }
+    }
+
+    textbox.value += "Directory upload complete.\n";
+});
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        resolve(reader.result);
+      };
+
+      reader.onerror = () => {
+        reject(reader.error);
+      };
+
+      reader.readAsText(file);
+    });
+  }
+
+  function getAcceptedTypes() {
+    const checkboxes = document.querySelectorAll('#settingsModal input[type="checkbox"]');
+    let acceptedTypes = [];
+    checkboxes.forEach(function(checkbox) {
+        if (checkbox.checked) {
+            acceptedTypes.push('.' + checkbox.id.replace('Checkbox', '').toLowerCase());
+        }
+    });
+    return acceptedTypes;
+}
+
   document.getElementById('settingsButton').addEventListener('click', function() {
     document.getElementById('settingsModal').classList.remove('hidden');
   });
@@ -142,18 +203,19 @@
   });
 
   document.getElementById('saveSettingsButton').addEventListener('click', function() {
-    const checkboxes = document.querySelectorAll('#settingsModal input[type="checkbox"]');
-    const fileInput = document.getElementById('fileInput');
-
-    let acceptedTypes = [];
-    checkboxes.forEach(function(checkbox) {
-      if (checkbox.checked) {
-        acceptedTypes.push('.' + checkbox.id.replace('Checkbox', '').toLowerCase());
-      }
-    });
-
-    fileInput.accept = acceptedTypes.join(',');
+    const acceptedTypes = getAcceptedTypes();
+    const acceptString = acceptedTypes.join(',');
+    document.getElementById('fileInput').accept = acceptString;
+    document.getElementById('dirInput').accept = acceptString;
     document.getElementById('settingsModal').classList.add('hidden');
-  });
+});
+
+// Make sure to call this function when the page loads to set initial accepted types
+window.addEventListener('load', function() {
+    const acceptedTypes = getAcceptedTypes();
+    const acceptString = acceptedTypes.join(',');
+    document.getElementById('fileInput').accept = acceptString;
+    document.getElementById('dirInput').accept = acceptString;
+});
 </script>
 {% endblock %}
