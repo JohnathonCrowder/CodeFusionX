@@ -147,7 +147,8 @@
     const acceptedTypes = getAcceptedTypes();
 
     textbox.value = ''; // Clear existing content
-    textbox.value += "Starting directory upload...\n\n";
+
+    let isFirstFile = true;
 
     for (const file of files) {
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
@@ -155,7 +156,11 @@
         if (acceptedTypes.includes(fileExtension)) {
             try {
                 const fileContent = await readFileAsText(file);
-                textbox.value += `File: ${file.name}\n${fileContent}\n\n`;
+                if (!isFirstFile) {
+                    textbox.value += '\n'.repeat(8); // Add 8 empty lines between files
+                }
+                textbox.value += `File: ${file.name}\n\n${fileContent}\n`; // Add 2 empty lines after filename
+                isFirstFile = false;
             } catch (error) {
                 textbox.value += `Error reading file ${file.name}: ${error}\n\n`;
             }
@@ -163,8 +168,6 @@
             textbox.value += `Skipping file: ${file.name} (not an accepted type)\n\n`;
         }
     }
-
-    textbox.value += "Directory upload complete.\n";
 });
 
   function readFileAsText(file) {
