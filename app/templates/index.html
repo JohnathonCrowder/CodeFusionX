@@ -20,13 +20,21 @@
       <button id="uploadDirButton" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded block w-full">
         Upload Directory
       </button>
+      <div id="fileList" class="mt-4">
+        <h3 class="text-lg font-bold mb-2">Uploaded Files:</h3>
+        <ul id="fileListItems" class="list-disc pl-6"></ul>
+      </div>
       <input id="fileInput" type="file" class="hidden">
       <input id="dirInput" type="file" webkitdirectory directory multiple class="hidden">
+      <div id="skippedFileList" class="mt-4">
+        <h3 class="text-lg font-bold mb-2">Skipped Files:</h3>
+        <ul id="skippedFileListItems" class="list-disc pl-6"></ul>
+      </div>
     </div>
   </div>
   <div class="w-3/4 mr-4 flex flex-col h-full">
     <h1 class="text-3xl font-bold mb-4">Welcome to CodeFusionX</h1>
-    <textarea id="textbox" class="flex-grow p-2 border border-gray-300 rounded resize-none text-black bg-white"></textarea>
+    <textarea id="textbox" class="flex-grow p-2 border border-gray-300 rounded resize-none text-gray-200 bg-gray-800"></textarea>
   </div>
 </div>
 
@@ -82,7 +90,20 @@
               <span class="ml-2 text-gray-700">Java Files (.java)</span>
             </label>
           </div>
+          <div class="ml-4">
+            <label class="inline-flex items-center">
+              <input type="checkbox" id="htmlCheckbox" class="form-checkbox h-5 w-5 text-blue-600">
+              <span class="ml-2 text-gray-700">HTML Files (.html)</span>
+            </label>
+          </div>
         </div>
+        <div class="ml-4">
+          <label class="inline-flex items-center">
+            <input type="checkbox" id="cssCheckbox" class="form-checkbox h-5 w-5 text-blue-600">
+            <span class="ml-2 text-gray-700">CSS Files (.css)</span>
+          </label>
+        </div>
+        
         <div class="mt-4">
           <h4 class="text-base font-medium text-gray-900">Data Files</h4>
           <div class="ml-4">
@@ -142,32 +163,44 @@
   });
 
   document.getElementById('dirInput').addEventListener('change', async function(event) {
-    const files = event.target.files;
-    const textbox = document.getElementById('textbox');
-    const acceptedTypes = getAcceptedTypes();
+  const files = event.target.files;
+  const textbox = document.getElementById('textbox');
+  const acceptedTypes = getAcceptedTypes();
+  const fileListItems = document.getElementById('fileListItems');
+  const skippedFileListItems = document.getElementById('skippedFileListItems');
 
-    textbox.value = ''; // Clear existing content
+  textbox.value = ''; // Clear existing content
+  fileListItems.innerHTML = ''; // Clear existing file list
+  skippedFileListItems.innerHTML = ''; // Clear existing skipped file list
 
-    let isFirstFile = true;
+  let isFirstFile = true;
 
-    for (const file of files) {
-        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+  for (const file of files) {
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
 
-        if (acceptedTypes.includes(fileExtension)) {
-            try {
-                const fileContent = await readFileAsText(file);
-                if (!isFirstFile) {
-                    textbox.value += '\n'.repeat(8); // Add 8 empty lines between files
-                }
-                textbox.value += `File: ${file.name}\n\n${fileContent}\n`; // Add 2 empty lines after filename
-                isFirstFile = false;
-            } catch (error) {
-                textbox.value += `Error reading file ${file.name}: ${error}\n\n`;
-            }
-        } else {
-            textbox.value += `Skipping file: ${file.name} (not an accepted type)\n\n`;
+    if (acceptedTypes.includes(fileExtension)) {
+      try {
+        const fileContent = await readFileAsText(file);
+        if (!isFirstFile) {
+          textbox.value += '\n'.repeat(8); // Add 8 empty lines between files
         }
+        textbox.value += `File: ${file.name}\n\n${fileContent}\n`; // Add 2 empty lines after filename
+        isFirstFile = false;
+
+        // Add the file name to the file list
+        const listItem = document.createElement('li');
+        listItem.textContent = file.name;
+        fileListItems.appendChild(listItem);
+      } catch (error) {
+        textbox.value += `Error reading file ${file.name}: ${error}\n\n`;
+      }
+    } else {
+      // Add the skipped file name to the skipped file list
+      const skippedListItem = document.createElement('li');
+      skippedListItem.textContent = file.name;
+      skippedFileListItems.appendChild(skippedListItem);
     }
+  }
 });
 
   function readFileAsText(file) {
