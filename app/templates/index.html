@@ -50,6 +50,13 @@
           Settings
         </h3>
         <div class="mt-4">
+          <h4 class="text-base font-medium text-gray-900">New Lines Between Files</h4>
+          <div class="ml-4">
+            <label for="newLineCount" class="block text-gray-700">Number of new lines:</label>
+            <input type="number" id="newLineCount" name="newLineCount" min="0" max="10" value="8" class="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+          </div>
+        </div>
+        <div class="mt-4">
           <h4 class="text-base font-medium text-gray-900">Text Files</h4>
           <div class="ml-4">
             <label class="inline-flex items-center">
@@ -58,6 +65,7 @@
             </label>
           </div>
         </div>
+        
         <div class="mt-4">
           <h4 class="text-base font-medium text-gray-900">Programming Files</h4>
           <div class="ml-4">
@@ -391,6 +399,7 @@
     document.getElementById('fileInput').accept = acceptString;
     document.getElementById('dirInput').accept = acceptString;
     document.getElementById('settingsModal').classList.add('hidden');
+    updateTextbox();
   });
 
   window.addEventListener('load', function() {
@@ -401,44 +410,45 @@
   });
 
   function updateTextbox() {
-    try {
-      const textbox = document.getElementById('textbox');
-      textbox.value = '';
-      const checkboxes = document.querySelectorAll('#fileListItems input[type="checkbox"]');
+  try {
+    const textbox = document.getElementById('textbox');
+    textbox.value = '';
+    const checkboxes = document.querySelectorAll('#fileListItems input[type="checkbox"]');
+    const newLineCount = parseInt(document.getElementById('newLineCount').value);
 
-      let isFirstFile = true;
+    let isFirstFile = true;
 
-      for (const checkbox of checkboxes) {
-        if (checkbox.checked) {
-          const fullPath = checkbox.id.replace('file-', '');
-          const fileContent = localStorage.getItem(fullPath);
-          if (fileContent) {
-            if (!isFirstFile) {
-              textbox.value += '\n'.repeat(8); // Add 8 empty lines between files
-            }
-            textbox.value += `File: ${fullPath}\n\n${fileContent}\n`;
-            isFirstFile = false;
-          } else {
-            // If the file content is not in localStorage, read it again
-            const file = Array.from(document.getElementById('dirInput').files).find(f => f.webkitRelativePath === fullPath);
-            if (file) {
-              readFileAsText(file).then(content => {
-                if (!isFirstFile) {
-                  textbox.value += '\n'.repeat(8);
-                }
-                textbox.value += `File: ${fullPath}\n\n${content}\n`;
-                isFirstFile = false;
-              }).catch(error => {
-                console.error(`Error re-reading file ${fullPath}: ${error}`);
-              });
-            }
+    for (const checkbox of checkboxes) {
+      if (checkbox.checked) {
+        const fullPath = checkbox.id.replace('file-', '');
+        const fileContent = localStorage.getItem(fullPath);
+        if (fileContent) {
+          if (!isFirstFile) {
+            textbox.value += '\n'.repeat(newLineCount);
+          }
+          textbox.value += `File: ${fullPath}\n\n${fileContent}\n`;
+          isFirstFile = false;
+        } else {
+          // If the file content is not in localStorage, read it again
+          const file = Array.from(document.getElementById('dirInput').files).find(f => f.webkitRelativePath === fullPath);
+          if (file) {
+            readFileAsText(file).then(content => {
+              if (!isFirstFile) {
+                textbox.value += '\n'.repeat(newLineCount);
+              }
+              textbox.value += `File: ${fullPath}\n\n${content}\n`;
+              isFirstFile = false;
+            }).catch(error => {
+              console.error(`Error re-reading file ${fullPath}: ${error}`);
+            });
           }
         }
       }
-    } catch (error) {
-      console.error('Error updating textbox:', error);
-      alert('An error occurred while updating the textbox. Please check the console for more details.');
     }
+  } catch (error) {
+    console.error('Error updating textbox:', error);
+    alert('An error occurred while updating the textbox. Please check the console for more details.');
   }
+}
 </script>
 {% endblock %}
